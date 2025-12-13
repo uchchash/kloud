@@ -20,3 +20,9 @@ class LoginForm(AuthenticationForm):
         for field_name, field in self.fields.items():
             field.widget.attrs['class'] = 'w-full px-3 py-2 border rounded-lg focus:ring focus:ring-blue-200'
             field.widget.attrs['placeholder'] = field.label    
+
+class OTPForm(forms.Form):
+    otp = forms.CharField(max_length=6, widget=forms.NumberInput(attrs={
+        'class': 'border p-2 rounded w-full',
+        'placeholder': 'Enter 6-digit OTP'
+    }))

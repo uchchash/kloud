@@ -1,5 +1,8 @@
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.db import models
+import random
+from datetime import datetime, timedelta
+from django.utils import timezone
 
 class CustomUserManager(BaseUserManager):
     def create_user(self, email, password=None, **extra_fields):
@@ -37,3 +40,21 @@ class CustomUser(AbstractUser):
     def __str__(self):
         name = f"{self.f_name or ''} {self.l_name or ''}".strip()
         return name if name else self.email
+
+
+class EmailOTP(models.Model):
+    PURPOSE_CHOICES = [
+        ('register', 'Registration'),
+        ('login', 'Login'),
+    ]
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+    otp = models.CharField(max_length=6)
+    purpose = models.CharField(max_length=10, choices=PURPOSE_CHOICES)
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField()
+
+    def is_expired(self):
+        return timezone.now() > self.expires_at
+
+    def __str__(self):
+        return f"{self.user.email} - {self.otp} ({self.purpose})"
