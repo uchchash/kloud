@@ -53,4 +53,15 @@ class File(models.Model):
 	
 	def __str__(self):
 		return f"{self.display_name} by {self.user}"
+	
+	def file_size(self):
+		if self.file:
+			return self.file.size
+		return 0
+	def human_readable_size(size):
+		for unit in ['B', 'KB', 'MB', 'GB', 'TB']:
+			if size < 1024:
+				return f"{size:.2f} {unit}"
+			size /= 1024
+		return f"{size:.2f} PB"
 
