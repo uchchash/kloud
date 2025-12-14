@@ -120,3 +120,4 @@ def resend_otp_view(request, purpose):
     )
     messages.success(request, "A new OTP has been sent to your email.")
     return redirect('vault:verify_otp', purpose=purpose)
+    
