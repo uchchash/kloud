@@ -49,3 +49,8 @@ def file_detail(request, permalink):
 def folder_list(request):
     folders = Folder.objects.filter(user=request.user)
     return render(request, 'storage/folder_list.html', {'folders': folders})
+
+@login_required
+def file_list(request): 
+    files = File.objects.filter(user=request.user)
+    return render(request, 'storage/file_list.html', {'files': files})
