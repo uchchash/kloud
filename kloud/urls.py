@@ -8,6 +8,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('vault/', include('vault.urls')),
     path('', include('storage.urls')),
+    path('payment/', include('payment.urls')),
 ]
 
 

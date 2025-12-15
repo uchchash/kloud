@@ -25,12 +25,16 @@ class SubscriptionPlan(models.Model):
     yearly_price = models.DecimalField(max_digits=10, decimal_places=2)
     stripe_price_id_monthly = models.CharField(max_length=100, blank=True)
     stripe_price_id_yearly = models.CharField(max_length=100, blank=True)
+    stripe_product_id = models.CharField(max_length=255, blank=True, null=True)
     tier_order = models.PositiveIntegerField(unique=True)
     is_active = models.BooleanField(default=True)
 
     def storage_bytes(self):
         multiplier = 1024**3 if self.storage_unit == 'GB' else 1024**4
         return self.storage_amount * multiplier
+    
+    def __str__(self):
+        return f"{self.name} - {self.storage_amount} {self.storage_unit}"
 
 
 class UserSubscription(models.Model):

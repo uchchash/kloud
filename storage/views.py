@@ -2,8 +2,8 @@ from django.shortcuts import redirect, render, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from .forms import FolderForm, FileForm
 from .models import Folder, File
+from payment.models import UserSubscription
 
-@login_required
 def create_folder(request):
     if request.method == "POST":
         form = FolderForm(request.POST)
@@ -54,3 +54,8 @@ def folder_list(request):
 def file_list(request): 
     files = File.objects.filter(user=request.user)
     return render(request, 'storage/file_list.html', {'files': files})
+
+
+def dashboard(request):
+    subscriptions = UserSubscription.objects.filter(user=1)
+    return render(request, 'storage/dashboard.html', {'subscriptions': subscriptions})

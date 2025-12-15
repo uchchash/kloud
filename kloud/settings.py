@@ -12,7 +12,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
 
-SECRET_KEY = os.environ.get("SECRET_KEY")
+SECRET_KEY = 'e0=ruv20=(bg=1faq!k6=r^msdz*0@0!^8fkaqwp&cg%@@*9u^'
 
 # Custom user authentication
 AUTH_USER_MODEL = 'vault.CustomUser'

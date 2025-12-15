@@ -10,4 +10,5 @@ urlpatterns = [
     path('file/<str:permalink>/', views.file_detail, name='file_detail'),
     path('folders/', views.folder_list, name='folder_list'),
     path('files/', views.file_list, name='file_list'),
+    path('dashboard/', views.dashboard, name='dashboard'),
 ]
