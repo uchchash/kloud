@@ -3,11 +3,13 @@ from .forms import RegisterForm, LoginForm, OTPForm
 from django.contrib.auth import login, authenticate
 from django.contrib.auth.decorators import login_required
 import random
-from datetime import timedelta
+from datetime import timedelta, datetime
 from django.utils import timezone
 from .models import EmailOTP, CustomUser
 from django.core.mail import send_mail
 from django.contrib import messages
+from storage.models import Folder, File
+from django.db.models import Sum
 
 def generate_otp():
     return f"{random.randint(100000, 999999)}"
@@ -78,7 +80,67 @@ def login_view(request):
 
 @login_required
 def dashboard_view(request):
-    return render(request, 'vault/dashboard.html')
+    user = request.user
+    folders = Folder.objects.filter(user=user, parent=None).order_by('-updated_at')
+    files = File.objects.filter(user=user, folder=None).order_by('-updated_at') 
+    total_files_count = File.objects.filter(user=user).count()
+    total_folders_count = Folder.objects.filter(user=user).count()
+    storage_used_bytes = 0
+    for file in File.objects.filter(user=user):
+        try:
+            storage_used_bytes += file.file.size
+        except:
+            pass
+
+    def format_size(size_bytes):
+        for unit in ['B', 'KB', 'MB', 'GB', 'TB']:
+            if size_bytes < 1024:
+                return f"{size_bytes:.1f} {unit}"
+            size_bytes /= 1024
+        return f"{size_bytes:.1f} PB"
+    
+    storage_used = format_size(storage_used_bytes)
+    storage_total = "10 GB" # Will combine with the subscription plan later
+    storage_total_bytes = 10 * 1024 * 1024 * 1024  
+    storage_percentage = min(100, (storage_used_bytes / storage_total_bytes) * 100) if storage_total_bytes > 0 else 0
+    
+    recent_date = timezone.now() - timedelta(days=7)
+    recent_activity = File.objects.filter(user=user, updated_at__gte=recent_date).count()
+    
+    context = {
+        'folders': folders,
+        'files': files,
+        'total_files': total_files_count,
+        'total_folders': total_folders_count,
+        'storage_used': storage_used,
+        'storage_total': storage_total,
+        'storage_percentage': storage_percentage,
+        'recent_activity': recent_activity,
+    }
+    
+    return render(request, 'vault/dashboard.html', context)
+
+@login_required
+def folder_view(request, permalink):    
+    user = request.user
+    folder = get_object_or_404(Folder, permalink=permalink, user=user)
+    subfolders = Folder.objects.filter(user=user, parent=folder).order_by('-updated_at')
+    files = File.objects.filter(user=user, folder=folder).order_by('-updated_at')
+    breadcrumbs = []
+    current = folder
+    while current:
+        breadcrumbs.insert(0, current)
+        current = current.parent
+    
+    context = {
+        'folder': folder,
+        'folders': subfolders,
+        'files': files,
+        'breadcrumbs': breadcrumbs,
+    }
+    
+    return render(request, 'vault/folder.html', context)
+
 
 def verify_otp_view(request, purpose):
     user_id = request.session.get('user_id')
@@ -120,4 +182,3 @@ def resend_otp_view(request, purpose):
     )
     messages.success(request, "A new OTP has been sent to your email.")
     return redirect('vault:verify_otp', purpose=purpose)
-    
