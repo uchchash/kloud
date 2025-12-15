@@ -4,6 +4,7 @@ from .forms import FolderForm, FileForm
 from .models import Folder, File
 from payment.models import UserSubscription
 
+@login_required
 def create_folder(request):
     if request.method == "POST":
         form = FolderForm(request.POST)
@@ -15,6 +16,27 @@ def create_folder(request):
     else:
         form = FolderForm()
     return render(request, 'storage/create_folder.html', {'form': form})
+
+@login_required
+def edit_folder(request):
+    if request.method == "POST":
+        folder = Folder.objects.get(permalink=permalink, user=request.user)
+        form = FolderForm(request.POST, instance=folder)
+        if form.is_valid():
+            folder = form.save(commit=False)
+            folder.user = request.user
+            folder.save()
+            return redirect('storage:folder_detail', permalink=folder.permalink)
+    else:
+        folder = Folder.objects.get(permalink=permalink, user=request.user)
+        form = FolderForm(instance=folder)
+    return render(request, 'storage/edit_folder.html', {'form': form})
+
+@login_required
+def delete_folder(request, permalink):
+    folder = Folder.objects.get(permalink=permalink, user=request.user)
+    folder.delete()
+    return redirect('storage:folder_list')
 
 @login_required
 def upload_file(request):
@@ -44,6 +66,14 @@ def folder_detail(request, permalink):
 def file_detail(request, permalink):
     file_instance = get_object_or_404(File, permalink=permalink, user=request.user)
     return render(request, 'storage/file_detail.html', {'file': file_instance})
+
+
+@login_required
+def delete_file(request, permalink):
+    file_instance = get_object_or_404(File, permalink=permalink, user=request.user)
+    file_instance.delete()
+    return redirect('storage:file_list')
+
 
 @login_required
 def folder_list(request):

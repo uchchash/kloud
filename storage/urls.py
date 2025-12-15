@@ -11,4 +11,7 @@ urlpatterns = [
     path('folders/', views.folder_list, name='folder_list'),
     path('files/', views.file_list, name='file_list'),
     path('dashboard/', views.dashboard, name='dashboard'),
+    path('edit_folder/<str:permalink>/', views.edit_folder, name='edit_folder'),
+    path('delete_folder/<str:permalink>/', views.delete_folder, name='delete_folder'),
+    path('delete_file/<str:permalink>/', views.delete_file, name='delete_file'),
 ]

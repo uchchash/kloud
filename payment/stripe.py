@@ -1,4 +1,7 @@
 import stripe
 from django.conf import settings
+from dotenv import load_dotenv
+import os
 
-stripe.api_key = settings.STRIPE_SECRET_KEY
+load_dotenv()
+stripe.api_key = os.getenv("STRIPE_SECRET_KEY")

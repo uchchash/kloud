@@ -6,6 +6,7 @@ from django.contrib.auth import get_user_model
 from payment.models import SubscriptionPlan, UserSubscription
 from payment.stripe import stripe
 from dotenv import load_dotenv
+import os
 
 load_dotenv()
 
