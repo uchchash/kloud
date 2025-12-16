@@ -22,7 +22,6 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
-
 # Application definition
 
 INSTALLED_APPS = [
@@ -122,3 +121,7 @@ MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
+LOGIN_URL = 'vault:login'
+LOGIN_REDIRECT_URL = 'vault:dashboard'
+LOGOUT_REDIRECT_URL = 'vault:login'

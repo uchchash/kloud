@@ -1,4 +1,6 @@
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import get_object_or_404, render, redirect
+from django.contrib.auth.decorators import login_required
+from django.contrib import messages
 from django.conf import settings
 from django.http import JsonResponse, HttpResponse
 from django.views.decorators.csrf import csrf_exempt
@@ -6,7 +8,9 @@ from django.contrib.auth import get_user_model
 from payment.models import SubscriptionPlan, UserSubscription
 from payment.stripe import stripe
 from dotenv import load_dotenv
+from vault.models import Member
 import os
+from datetime import datetime, timedelta
 
 load_dotenv()
 
@@ -26,14 +30,14 @@ def create_checkout_session(request):
     else:
         return JsonResponse({"error": "Invalid billing cycle"}, status=400)
 
-    customer_email = request.user.email if request.user.is_authenticated else "test@example.com"
-    user_id = request.user.id if request.user.is_authenticated else 1  # for testing
+    customer_email = request.user.email
+    user_id = request.user.id
 
     checkout_session = stripe.checkout.Session.create(
         mode="subscription",
         payment_method_types=["card"],
         line_items=[{"price": price_id, "quantity": 1}],
-        success_url="http://localhost:8000/dashboard/",
+        success_url="http://localhost:8000/vault/dashboard/",
         cancel_url="http://localhost:8000/",
         customer_email=customer_email,
         metadata={
@@ -64,7 +68,8 @@ def stripe_webhook(request):
 
     event_type = event['type']
     data = event['data']['object']
-    print("Received webhook:", event_type)
+    print(f"Received webhook: {event_type}")
+    print(f"DEBUG: Event Payload: {data}")
 
     if event_type == 'checkout.session.completed':
         user_id = data['metadata'].get('user_id')
@@ -82,7 +87,7 @@ def stripe_webhook(request):
             else:
                 end_date = None
 
-            UserSubscription.objects.create(
+            subscription = UserSubscription.objects.create(
                 user=user,
                 subscription_plan_id=plan_id,
                 billing_cycle=billing_cycle,
@@ -91,6 +96,18 @@ def stripe_webhook(request):
                 status='active',
                 end_date=end_date
             )
+
+            try:
+                if not hasattr(user, 'member'):
+                     from vault.models import Member
+                     Member.objects.create(user=user)
+                
+                user.member.current_plan = subscription
+                user.member.save()
+                print(f"DEBUG: Member plan updated for {user.email}")
+            except Exception as e:
+                print(f"ERROR: Failed to update member plan: {e}")
+
             print(f"Subscription activated for {user.email} until {end_date}")
 
     elif event_type == 'customer.subscription.deleted':
@@ -101,12 +118,24 @@ def stripe_webhook(request):
         subscription_id = data.get('subscription')
         subscription = UserSubscription.objects.filter(stripe_subscription_id=subscription_id, status='active').first()
         if subscription:
-            if subscription.billing_cycle == 'monthly':
-                subscription.end_date += timedelta(days=30)
-            elif subscription.billing_cycle == 'yearly':
-                subscription.end_date += timedelta(days=365)
+            period_end = None
+            try:
+                lines = data['lines']
+                if lines and lines['data']:
+                    period_end = lines['data'][0]['period']['end']
+            except (KeyError, TypeError, IndexError):
+                pass
+
+            if period_end:
+                 subscription.end_date = datetime.fromtimestamp(period_end)
+            else:
+                if subscription.billing_cycle == 'monthly':
+                    subscription.end_date = datetime.now() + timedelta(days=30)
+                elif subscription.billing_cycle == 'yearly':
+                    subscription.end_date = datetime.now() + timedelta(days=365)
+            
             subscription.save()
-            print(f"Subscription {subscription_id} renewed, new end date: {subscription.end_date}")
+            print(f"Subscription {subscription_id} renewed/verified, new end date: {subscription.end_date}")
 
     elif event_type == 'invoice.payment_failed':
         subscription_id = data.get('subscription')
@@ -117,3 +146,4 @@ def stripe_webhook(request):
             print(f"Subscription {subscription_id} payment failed → canceled")
 
     return HttpResponse(status=200)
+
