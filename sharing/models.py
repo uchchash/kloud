@@ -6,7 +6,7 @@ from storage.models import File, Folder
 
 class SharedFolder(models.Model):
     folder = models.ForeignKey(Folder, on_delete=models.CASCADE)
-    token = models.CharField(max_length=20, default=generate_permalink, unique=True, editable=False)
+    share_token = models.CharField(max_length=20, default=generate_permalink, unique=True, editable=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -15,14 +15,14 @@ class SharedFolder(models.Model):
     
     class Meta:
         indexes = [
-            models.Index(fields=['folder', 'token']),
+            models.Index(fields=['folder', 'share_token']),
         ]
 
 # Create Shared File Model
 
 class SharedFile(models.Model):
     file = models.ForeignKey(File, on_delete=models.CASCADE)
-    token = models.CharField(max_length=20, default=generate_permalink, unique=True, editable=False)
+    share_token = models.CharField(max_length=20, default=generate_permalink, unique=True, editable=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -31,5 +31,5 @@ class SharedFile(models.Model):
 
     class Meta:
         indexes = [
-            models.Index(fields=['file', 'token']),
+            models.Index(fields=['file', 'share_token']),
         ]

@@ -36,3 +36,23 @@ def shared_folder(request, token, subfolder_permalink=None):
         "is_root": current_folder == root_folder
     })    
 
+# Generate Shared File and Folder Link View
+
+@login_required
+@require_POST
+def generate_shared_link(request):
+    data_type = request.POST.get("type") # Get the data type from the post request
+    id = request.POST.get("id") # Get the id from the post request
+
+    if data_type == "folder": # If the data type is folder
+        folder = get_object_or_404(Folder, id=id) # Get the folder object
+        shared_folder = SharedFolder.objects.create(folder=folder) # Create a shared folder object
+        url = request.build_absolute_uri(reverse('sharing:shared_folder', args=[shared_folder.share_token])) # Build the absolute url
+        return JsonResponse({'success': True, 'url': url}) # Return the success response
+    elif data_type == "file": # If the data type is file
+        file = get_object_or_404(File, id=id) # Get the file object
+        shared_file = SharedFile.objects.create(file=file) # Create a shared file object
+        url = request.build_absolute_uri(reverse('sharing:shared_file', args=[shared_file.share_token])) # Build the absolute url
+        return JsonResponse({'success': True, 'url': url}) # Return the success response
+    
+    return JsonResponse({'success': False, 'error': 'Invalid type'}) # Return the error response

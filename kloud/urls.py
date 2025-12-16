@@ -10,7 +10,7 @@ urlpatterns = [
     path('vault/', include('vault.urls')),
     path('', include('storage.urls')),
     path('payment/', include('payment.urls')),
-    path('sharing/', include('sharing.urls')),
+    path('share/', include('sharing.urls')),
 ]
 
 
