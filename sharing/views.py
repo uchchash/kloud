@@ -56,3 +56,23 @@ def generate_shared_link(request):
         return JsonResponse({'success': True, 'url': url}) # Return the success response
     
     return JsonResponse({'success': False, 'error': 'Invalid type'}) # Return the error response
+
+
+# Download Shared File
+
+def download_shared_file(request, token):
+    shared_file = get_object_or_404(SharedFile, share_token=token)
+    file = shared_file.file
+    response = FileResponse(file.file.open())
+    response['Content-Disposition'] = f'attachment; filename="{file.name}"'
+    return response
+
+# Download Files From Shared Folder
+
+def download_files_from_shared_folder(request, token):
+    shared_folder = get_object_or_404(SharedFolder, share_token=token)
+    file = get_object_or_404(File, id=file_id, folder=shared_folder.folder)
+    response = FileResponse(file.file.open())
+    response['Content-Disposition'] = f'attachment; filename="{file.name}"'
+    return response
+
