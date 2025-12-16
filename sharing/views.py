@@ -8,13 +8,11 @@ from django.urls import reverse
 
 # Shared File View
 
-@login_required
 def shared_file(request, token):
     shared_file = get_object_or_404(SharedFile, share_token=token)
     return render(request, "sharing/shared_file.html", {"file": shared_file.file})
 
 # Shared Folder View
-@login_required
 def shared_folder(request, token, subfolder_permalink=None):
     shared_folder_instance = get_object_or_404(SharedFolder, share_token=token)
     root_folder = shared_folder_instance.folder
@@ -75,4 +73,73 @@ def download_files_from_shared_folder(request, token):
     response = FileResponse(file.file.open())
     response['Content-Disposition'] = f'attachment; filename="{file.name}"'
     return response
+
+# Manage Shared Items
+
+@login_required
+def shared_items_list(request):
+    shared_folders = SharedFolder.objects.filter(folder__user=request.user).order_by('-created_at')
+    shared_files = SharedFile.objects.filter(file__user=request.user).order_by('-created_at')
+    
+    return render(request, 'sharing/manage_shared.html', {
+        'shared_folders': shared_folders,
+        'shared_files': shared_files
+
+    })
+
+
+# Remove Access
+
+@login_required
+@require_POST
+def remove_shared_item(request):
+    type = request.POST.get('type')
+    id = request.POST.get('id')
+    
+    try:
+        if type == 'folder':
+            item = get_object_or_404(SharedFolder, folder__id=id, folder__user=request.user)
+            item.delete()
+            return JsonResponse({'success': True})
+        elif type == 'file':
+            item = get_object_or_404(SharedFile, file__id=id, file__user=request.user)
+            item.delete()
+            return JsonResponse({'success': True})
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+        
+    return JsonResponse({'success': False, 'error': 'Invalid type'})
+
+# Check if shared item exists
+
+@login_required
+def get_share_info(request):
+    type = request.GET.get('type')
+    id = request.GET.get('id')
+    
+    exists = False
+    url = None
+    token = None
+    
+    if type == 'folder':
+        folder = get_object_or_404(Folder, id=id, user=request.user)
+        try:
+            shared_folder = SharedFolder.objects.get(folder=folder)
+            exists = True
+            token = str(shared_folder.share_token)
+            url = request.build_absolute_uri(reverse('sharing:shared_folder', args=[shared_folder.share_token]))
+        except SharedFolder.DoesNotExist:
+            pass
+            
+    elif type == 'file':
+        file = get_object_or_404(File, id=id, user=request.user)
+        try:
+            shared_file = SharedFile.objects.get(file=file)
+            exists = True
+            token = str(shared_file.share_token)
+            url = request.build_absolute_uri(reverse('sharing:shared_file', args=[shared_file.share_token]))
+        except SharedFile.DoesNotExist:
+            pass
+            
+    return JsonResponse({'exists': exists, 'url': url, 'token': token})
 
