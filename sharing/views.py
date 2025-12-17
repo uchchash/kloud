@@ -1,11 +1,15 @@
+import logging
 from django.shortcuts import render, get_object_or_404
 from django.http import JsonResponse, FileResponse
 from django.views.decorators.http import require_POST
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import get_user_model
+from django.core.mail import send_mail
 from .models import SharedFolder, SharedFile, FolderPermission, FilePermission
 from storage.models import File, Folder
 from django.urls import reverse
+
+logger = logging.getLogger(__name__)
 
 # Shared File View
 
@@ -165,21 +169,47 @@ def share_with_user(request):
         if data_type == 'folder':
             folder = get_object_or_404(Folder, id=item_id, user=request.user)
             # Check if permission already exists
-            FolderPermission.objects.update_or_create(
+            permission, created = FolderPermission.objects.update_or_create(
                 folder=folder,
                 user=target_user,
                 defaults={'permission': 'view'} # Default to view
             )
+            
+            # Send email notification if newly shared
+            if created:
+                try:
+                    send_mail(
+                        subject=f'{request.user.email} shared a folder with you',
+                        message=f'{request.user.email} has shared the folder "{folder.name}" with you on Kloud.\n\nLog in to your account to view the shared folder.',
+                        from_email='noreply@kloud.com',
+                        recipient_list=[target_user.email],
+                    )
+                except Exception as e:
+                    logger.error(f'Failed to send folder share notification to {target_user.email}: {e}')
+            
             return JsonResponse({'success': True})
             
         elif data_type == 'file':
             file = get_object_or_404(File, id=item_id, user=request.user)
              # Check if permission already exists
-            FilePermission.objects.update_or_create(
+            permission, created = FilePermission.objects.update_or_create(
                 file=file,
                 user=target_user,
                 defaults={'permission': 'view'} # Default to view
             )
+            
+            # Send email notification if newly shared
+            if created:
+                try:
+                    send_mail(
+                        subject=f'{request.user.email} shared a file with you',
+                        message=f'{request.user.email} has shared the file "{file.name}" with you on Kloud.\n\nLog in to your account to view the shared file.',
+                        from_email='noreply@kloud.com',
+                        recipient_list=[target_user.email],
+                    )
+                except Exception as e:
+                    logger.error(f'Failed to send file share notification to {target_user.email}: {e}')
+            
             return JsonResponse({'success': True})
             
     except Exception as e:
