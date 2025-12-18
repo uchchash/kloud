@@ -11,6 +11,7 @@ urlpatterns = [
     path('', include('storage.urls')),
     path('payment/', include('payment.urls')),
     path('share/', include('sharing.urls')),
+    path('search/', include('search.urls')),
 ]
 
 
