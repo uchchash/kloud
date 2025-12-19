@@ -1,6 +1,8 @@
 from django.urls import path, include
 from .views import register_view, login_view, dashboard_view, verify_otp_view, resend_otp_view, folder_view, change_email_view, change_password_view, logout_view
 from .views import profile_view, update_profile_view, plans_view
+from rest_framework.routers import DefaultRouter
+
 app_name = 'vault'
 
 urlpatterns = [

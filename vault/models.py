@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 from django.utils import timezone
 from payment.models import UserSubscription
 
+
 class CustomUserManager(BaseUserManager):
     def create_user(self, email, password=None, **extra_fields):
         if not email:
@@ -30,8 +31,6 @@ class CustomUserManager(BaseUserManager):
 
 class CustomUser(AbstractUser):
     username = None  # remove username field
-    f_name = models.CharField(max_length=100, blank=True, null=True, verbose_name="First Name")
-    l_name = models.CharField(max_length=100, blank=True, null=True, verbose_name="Last Name")
     email = models.EmailField(max_length=200, unique=True)
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = []
@@ -39,7 +38,7 @@ class CustomUser(AbstractUser):
     objects = CustomUserManager()
 
     def __str__(self):
-        name = f"{self.f_name or ''} {self.l_name or ''}".strip()
+        name = f"{self.first_name or ''} {self.last_name or ''}".strip()
         return name if name else self.email
 
 

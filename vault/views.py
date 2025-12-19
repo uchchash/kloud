@@ -13,6 +13,9 @@ from django.core.mail import send_mail
 from django.contrib import messages
 from storage.models import Folder, File
 from django.db.models import Sum
+from rest_framework import viewsets, permissions
+from .serializers import UserSerializer
+from django.contrib.auth import get_user_model
 
 def get_or_create_member(user):
     try:
@@ -340,3 +343,22 @@ def change_password_view(request):
 def logout_view(request):
     logout(request)
     return redirect('vault:login')
+
+User = get_user_model()
+
+# 1. /api/users - Admin Only
+class UserListViewSet(viewsets.ModelViewSet):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+    permission_classes = [permissions.IsAdminUser] 
+
+
+class UserMeViewSet(viewsets.ModelViewSet):
+    serializer_class = UserSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get_queryset(self):
+        return User.objects.filter(id=self.request.user.id)
+    
+    def get_object(self):
+        return self.request.user

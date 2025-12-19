@@ -4,6 +4,8 @@ from .forms import FolderForm, FileForm
 from .models import Folder, File
 from payment.models import UserSubscription
 from django.http import FileResponse
+from rest_framework import viewsets, permissions
+from .serializers import FileSerializer, FolderSerializer
 
 
 @login_required
@@ -138,3 +140,20 @@ def file_list(request):
 def dashboard(request):
     subscriptions = UserSubscription.objects.filter(user=1)
     return render(request, 'storage/dashboard.html', {'subscriptions': subscriptions})
+
+
+class FileViewSet(viewsets.ModelViewSet):
+    queryset = File.objects.all()
+    serializer_class = FileSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
+class FolderViewSet(viewsets.ModelViewSet):
+    queryset = Folder.objects.all()
+    serializer_class = FolderSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
