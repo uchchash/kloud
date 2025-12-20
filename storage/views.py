@@ -147,6 +147,10 @@ class FileViewSet(viewsets.ModelViewSet):
     serializer_class = FileSerializer
     permission_classes = [permissions.IsAuthenticated]
 
+    def get_queryset(self):
+        return File.objects.filter(user=self.request.user)
+
+
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
 
@@ -154,6 +158,9 @@ class FolderViewSet(viewsets.ModelViewSet):
     queryset = Folder.objects.all()
     serializer_class = FolderSerializer
     permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return Folder.objects.filter(user=self.request.user)
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
